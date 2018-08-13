@@ -19,23 +19,23 @@ Incoming data stream is a tagged data stream. Each incoming data is a hashmap wi
 
 In general, a data unit would have three keys
 
-signal: This key specifies the source ID of the signal. It could be any valid alphanumeric combo. ex: ATL1, ATL2, ATL3, ATL4
-value: This would be the actual value of the signal. This would always be a string. ex: '234', 'HIGH', 'LOW', '23/07/2017'
-value_type: This would specify how the value is to interpreted. It would be one of the following
-Integer: In this case the value is interpreted to be an integer. Ex: '234' would be interpreted as 234
-String: In this case the value is interpreted to be a String. Ex: 'HIGH' would be interpreted as 'HIGH'
-Datetime: In this case the value is interpreted to be a Date Time.
-Rules can be specified for a signal and in accordance to the value_type. Some examples of rules are:
+- signal: This key specifies the source ID of the signal. It could be any valid alphanumeric combo. ex: ATL1, ATL2, ATL3, ATL4
+- value: This would be the actual value of the signal. This would always be a string. ex: '234', 'HIGH', 'LOW', '23/07/2017'
+- value_type: This would specify how the value is to interpreted. It would be one of the following
+- Integer: In this case the value is interpreted to be an integer. Ex: '234' would be interpreted as 234
+- String: In this case the value is interpreted to be a String. Ex: 'HIGH' would be interpreted as 'HIGH'
+- Datetime: In this case the value is interpreted to be a Date Time.
+- Rules can be specified for a signal and in accordance to the value_type. Some examples of rules are:
 
-ATL1 value should not rise above 240.00
-ATL2 value should never be LOW
-ATL3 should not be in future
+- ATL1 value should not rise above 240.00
+- ATL2 value should never be LOW
+- ATL3 should not be in future
 
 ## Requirement Assumptions
-Data Payload - The sample payload json file is about 13KB. Make assumption here, the average payload is about this size.
-Data Scale - In current example, we assume the data scale at the begining will be 10KB per minute.
-Data Format - From the sample payload, it's well formatted JSON format. Field "signal" is always 4 characters, "value_type" are always in ["String", "Datetime", "Integer"] and always present the data type of "value" field in the row.
-Data Security Classification - Assume as cenfidential.
+- Data Payload - The sample payload json file is about 13KB. Make assumption here, the average payload is about this size.
+- Data Scale - In current example, we assume the data scale at the begining will be 10KB per minute.
+- Data Format - From the sample payload, it's well formatted JSON format. Field "signal" is always 4 characters, "value_type" are always in ["String", "Datetime", "Integer"] and always present the data type of "value" field in the row.
+- Data Security Classification - Assume as cenfidential.
 
 ## Architect
 The architect will be built on top of AWS (Amazon Web Service). Using Kinesis Stream as data input and output. Using Kinesis Analytics as filtering engine.
