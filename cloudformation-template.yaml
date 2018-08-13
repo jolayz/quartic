@@ -1,0 +1,107 @@
+Description: "quartic.ai filter application"
+Resources:
+  FilterApplication:
+    Type: AWS::KinesisAnalytics::Application
+    Properties:
+      ApplicationDescription: "Filter Stream"
+      ApplicationCode: "CREATE OR REPLACE STREAM \"DESTINATION_SQL_STREAM\" (SIGNAL VARCHAR(8), VALUE_TYPE VARCHAR(8), VALUE_DATA VARCHAR(32));\n
+CREATE OR REPLACE PUMP \"STREAM_PUMP\" AS INSERT INTO \"DESTINATION_SQL_STREAM\"\n
+SELECT STREAM SIGNAL, VALUE_TYPE, VALUE_DATA\n
+FROM \"SOURCE_SQL_STREAM_001\"\n
+WHERE NOT(SIGNAL = 'ATL1' AND VALUE_TYPE = 'Integer' AND CAST(VALUE_DATA AS INT) > 240)\n
+AND NOT(SIGNAL = 'ATL2' AND VALUE_TYPE = 'String' AND VALUE_DATA = 'LOW')\n
+AND NOT(SIGNAL = 'ATL3' AND VALUE_TYPE = 'Datatime' AND CAST(VALUE_DATA AS TIMESTAMP) > CURRENT_TIMESTAMP);"
+      Inputs:
+        - NamePrefix: "SOURCE_SQL_STREAM"
+          InputSchema:
+            RecordColumns:
+             - Name: "SIGNAL"
+               SqlType: "VARCHAR(8)"
+               Mapping: "$[0:].signal"
+             - Name: "VALUE_TYPE"
+               SqlType: "VARCHAR(8)"
+               Mapping: "$[0:].value_type"
+             - Name: "VALUE_DATA"
+               SqlType: "VARCHAR(32)"
+               Mapping: "$[0:].value"
+            RecordEncoding: "UTF-8"
+            RecordFormat:
+              RecordFormatType: "JSON"
+              MappingParameters:
+                JSONMappingParameters:
+                  RecordRowPath: "$[0:]"
+          KinesisStreamsInput:
+            ResourceARN: !GetAtt InputKinesisStream.Arn
+            RoleARN: !GetAtt KinesisAnalyticsRole.Arn
+  InputKinesisStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      ShardCount: 1
+  KinesisAnalyticsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: kinesisanalytics.amazonaws.com
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: Open
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "*"
+                Resource: "*"
+  FilterApplicationOutputs:
+    Type: AWS::KinesisAnalytics::ApplicationOutput
+    DependsOn: FilterApplication
+    Properties:
+      ApplicationName: !Ref FilterApplication
+      Output:
+        Name: "exampleOutput"
+        DestinationSchema:
+          RecordFormatType: "JSON"
+        KinesisStreamsOutput:
+          ResourceARN: !GetAtt OutputKinesisStream.Arn
+          RoleARN: !GetAtt KinesisAnalyticsRole.Arn
+  OutputKinesisStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      ShardCount: 1
+  ApplicationReferenceDataSource:
+    Type: AWS::KinesisAnalytics::ApplicationReferenceDataSource
+    DependsOn: FilterApplicationOutputs
+    Properties:
+      ApplicationName: !Ref FilterApplication
+      ReferenceDataSource:
+        TableName: "OutputKinesisStream"
+        ReferenceSchema:
+          RecordColumns:
+            - Name: "SIGNAL"
+              SqlType: "VARCHAR(8)"
+              Mapping: "$[0:].signal"
+            - Name: "VALUE_TYPE"
+              SqlType: "VARCHAR(8)"
+              Mapping: "$[0:].value_type"
+            - Name: "VALUE_DATA"
+              SqlType: "VARCHAR(32)"
+              Mapping: "$[0:].value"
+          RecordEncoding: "UTF-8"
+          RecordFormat:
+            RecordFormatType: "JSON"
+            MappingParameters:
+              JSONMappingParameters:
+                RecordRowPath: "$[0:]"
+        S3ReferenceDataSource:
+          BucketARN: !GetAtt S3Bucket.Arn
+          FileKey: 'fakeKey'
+          ReferenceRoleARN: !GetAtt KinesisAnalyticsRole.Arn
+  S3Bucket:
+    Type: AWS::S3::Bucket
+Outputs:
+  ApplicationPhysicalResourceId:
+    Value: !Ref FilterApplication
