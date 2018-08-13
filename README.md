@@ -1,5 +1,4 @@
-# Streaming Data Filtering
-
+# Streaming Data Filtering 
 ## Problem
 Problem Statement
 Build a rule engine that will apply rules on streaming data. Your program should be able to perform followingtasks, at minimum:
@@ -59,12 +58,22 @@ It could connect with your Amazon Retail account.
 In this package, I will have a CloudFormation template. After you log in to your AWS console, select CloudFormation service. Press "Create Stack" and paste this template. It will create all the AWS components needed by this test in your AWS account. After test, you could delete the stack and it will clean up the resources created by it.
 
 ### Step 3 - Send a payload to Kinesis Stream
+Consider using AWS CLI to send events to Kinesis for testing purpose.
 
+```
+data=$(cat ~/Downloads/raw_data.json)
+partition=$(md5sum ~/Downloads/raw_data.json | awk '{ print $1 }')
+aws kinesis put-record --data "$data" --stream-name test6-InputKinesisStream-1Q614TX8QXW85 --partition-key $partition
+```
 
+### Step 4 - Check Result
+The output is streaming to another Stream and backed to S3. You could see the result on S3 bucket created by this CloudFormation Stack.
 
+### Step 5 - Clean Up
+Delete CloudFormation Stack, then all the AWS resources created by this test will be safely deleted.
 
-
-
+## Assumption Consideration
+I made a few assumptions mentioned before. For scale and payload size, we could simply increase Shard Count to scaling up. For data format validation, we could use Lambda functions to validate/reformat before fill into Kinesis Analytics. Kinesis supports encrypt payload to improve data secure at rest. Depends on data classification, we could also encrypt the data on client side before send it to Kinesis.
 
 
 
